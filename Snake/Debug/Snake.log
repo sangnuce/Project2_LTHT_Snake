@@ -1,1 +1,4 @@
-﻿
+﻿  Source.c
+e:\documents\visual studio 2015\projects\ltht\snake\snake\source.c(350): warning C4244: 'function': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Snake.vcxproj -> E:\Documents\Visual Studio 2015\Projects\LTHT\Snake\Debug\Snake.exe
+  Snake.vcxproj -> E:\Documents\Visual Studio 2015\Projects\LTHT\Snake\Debug\Snake.pdb (Partial PDB)
