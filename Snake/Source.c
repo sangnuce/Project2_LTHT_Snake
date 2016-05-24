@@ -6,7 +6,7 @@
 #define START_BUTTON 101
 #define RESTART_BUTTON 102
 #define SNAKE_WIDTH 10
-#define MAX_SIZE 23
+#define MAX_SIZE 103
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -70,6 +70,34 @@ int random(int min, int max)
 	return rs;
 }
 
+POINT getNewPoint(RECT rect, POINT snake[], int size)
+{
+	// Tạo nguồn để tính ra số ngẫu nghiên theo thuật toán của hàm rand()
+	srand(time(NULL));
+
+	POINT point;
+	// Chọn toạ độ ngẫu nhiên cho mồi
+	while (TRUE)
+	{
+		point.x = random(rect.left + 150, rect.right - 20);
+		point.y = random(rect.top + 20, rect.bottom - 20);
+
+		//Kiểm tra xem thức ăn có thuộc vào rắn 
+		int i = 0;
+		while (i < size)
+		{
+			if (point.x == snake[i].x && point.y == snake[i].y)
+				break;
+			i++;
+		}
+
+		// Nếu i vượt qua độ dài của rắn thì mồi không thuộc rắn --> thoát vòng lặp
+		if (i >= size) break;
+	}
+
+	return point;
+}
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HDC hdc;
@@ -99,9 +127,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	// Điểm số
 	static int score = 0;
 
-	// Cờ đánh dấu có phải tạo mồi mới hay không
-	static BOOL newpoint = TRUE;
-
 	// Hàng đợi hướng di chuyển.
 	// Có thể bấm phím di chuyển nhanh quá, chương trình chưa kịp xử lý nên phải cho vào hàng đợi
 	static int queue_dir[10];
@@ -115,7 +140,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Tạo các nút
 		CreateWindow(L"BUTTON", L"BẮT ĐẦU", WS_VISIBLE | WS_CHILD, 25, 20, 100, 24, hwnd, (HMENU)START_BUTTON, GetModuleHandle(NULL), NULL);
-		CreateWindow(L"BUTTON", L"CHƠI LẠI", WS_VISIBLE | WS_CHILD, 25, 146, 100, 24, hwnd, (HMENU)RESTART_BUTTON, GetModuleHandle(NULL), NULL);
+		CreateWindow(L"BUTTON", L"LÀM MỚI", WS_VISIBLE | WS_CHILD, 25, 146, 100, 24, hwnd, (HMENU)RESTART_BUTTON, GetModuleHandle(NULL), NULL);
 
 		// Khởi tạo con rắn
 		snake[2].x = 230;
@@ -145,6 +170,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		rect.top -= (rect.top % SNAKE_WIDTH);
 		rect.right -= (rect.right % SNAKE_WIDTH);
 		rect.bottom -= (rect.bottom % SNAKE_WIDTH);
+
+		if (message == WM_CREATE)
+		{
+			// Khởi tạo mồi
+			point = getNewPoint(rect, snake, size);
+		}
 
 		// Vẽ lại vùng Client
 		InvalidateRect(hwnd, NULL, TRUE);
@@ -198,16 +229,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			size = 3;
 			score = 0;
 			playing = FALSE;
-			newpoint = TRUE;
 			direction = VK_RIGHT;
 			count_queue = 0;
 
+			// Khởi tạo rắn
 			snake[2].x = 230;
 			snake[2].y = 120;
 			snake[1].x = snake[2].x + SNAKE_WIDTH;
 			snake[1].y = snake[2].y;
 			snake[0].x = snake[1].x + SNAKE_WIDTH;
 			snake[0].y = snake[2].y;
+
+			// Khởi tạo mồi
+			point = getNewPoint(rect, snake, size);
 
 			// Vẽ lại vùng Client
 			InvalidateRect(hwnd, NULL, TRUE);
@@ -220,11 +254,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case ID_TIMER:
 		{
+			// Vùng cần vẽ lại
+			RECT rct;
+			
 			// Cờ kiểm tra xem rắn "chết" hay chưa
 			BOOL alive = TRUE;
 
 			// Kiểm tra xem rắn đâm vào cạnh không
-			if ((snake[0].x >= rect.right) || (snake[0].x <= rect.left) || (snake[0].y >= rect.bottom) || (snake[0].y <= rect.top))
+			if (snake[0].x >= rect.right || snake[0].x < rect.left || snake[0].y >= rect.bottom || snake[0].y < rect.top)
 			{
 				alive = FALSE;
 			}
@@ -265,11 +302,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				// Tăng điểm
 				score++;
 
-				// Gán cờ vẽ lại con mồi khác
-				newpoint = TRUE;
-
 				// Vẽ lại vùng hiển thị điểm
 				InvalidateRect(hwnd, &score_rect, TRUE);
+
+				// Lưu lại vùng của mồi cũ
+				rct.left = point.x;
+				rct.top = point.y;
+				rct.right = point.x + SNAKE_WIDTH;
+				rct.bottom = point.y + SNAKE_WIDTH;
+
+				// Tính lại toạ độ con mồi khác
+				point = getNewPoint(rect, snake, size);
+
+				// Vẽ lại vùng của mồi cũ để xoá đi
+				InvalidateRect(hwnd, &rct, TRUE);
+
+				// Lưu lại vùng của mồi mới
+				rct.left = point.x;
+				rct.top = point.y;
+				rct.right = point.x + SNAKE_WIDTH;
+				rct.bottom = point.y + SNAKE_WIDTH;
+
+				// Vẽ lại vùng của mồi mới để hiển thị
+				InvalidateRect(hwnd, &rct, TRUE);
 
 				// Nếu rắn đạt độ dài tối đa cho phép thì ngừng timer và đưa ra thông báo
 				if (size == MAX_SIZE)
@@ -281,14 +336,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 
 			// Dịch chuyển
+			// Lưu lại vùng của đuôi rắn
+			rct.left = snake[size-1].x;
+			rct.top = snake[size - 1].y;
+			rct.right = snake[size - 1].x + SNAKE_WIDTH;
+			rct.bottom = snake[size - 1].y + SNAKE_WIDTH;
+
+			// Gán lại toạn độ các phần tử phía sau bằng phần tử đứng trước nó.
 			for (int i = size - 1; i > 0; i--)
 				snake[i] = snake[i - 1];
 
-			// Lấy hướng đi trong hàng đợi hướng đi, nếu hết rồi thì chọn hướng cuối cùng.
+			// Lấy hướng đi trong hàng đợi hướng đi, nếu hết rồi thì giữ nguyên hướng trước đó.
 			if (count_queue > 0)
 			{
 				direction = queue_dir[0];
 				count_queue--;
+				for (int i = 0; i < count_queue; i++) queue_dir[i] = queue_dir + 1;
 			}
 
 			switch (direction)
@@ -307,8 +370,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 
-			// Vẽ lại vùng rắn di chuyển
-			InvalidateRect(hwnd, &rect, TRUE);
+			// Vẽ lại vùng đuôi rắn để xoá đi
+			InvalidateRect(hwnd, &rct, TRUE);
+
+			// Lưu lại vùng của đầu rắn
+			rct.left = snake[0].x;
+			rct.top = snake[0].y;
+			rct.right = snake[0].x + SNAKE_WIDTH;
+			rct.bottom = snake[0].y + SNAKE_WIDTH;
+
+			// Vẽ lại vùng đuôi rắn để hiển thị ở vị trí mới
+			InvalidateRect(hwnd, &rct, TRUE);
 			break;
 		}
 		}
@@ -343,37 +415,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			Rectangle(hdc, snake[i].x, snake[i].y, snake[i].x + SNAKE_WIDTH, snake[i].y + SNAKE_WIDTH);
 		}
 
-		// Kiểm tra xem có cần vẽ mồi mới
-		if (newpoint == TRUE)
-		{
-			// Tạo nguồn để tính ra số ngẫu nghiên theo thuật toán của hàm rand()
-			srand(time(NULL));
-
-			// Chọn toạ độ ngẫu nhiên cho mồi
-			while (TRUE)
-			{
-				point.x = random(rect.left + 150, rect.right - 20);
-				point.y = random(rect.top + 20, rect.bottom - 20);
-
-				//Kiểm tra xem thức ăn có thuộc vào rắn 
-				int i = 0;
-				while (i < size)
-				{
-					if (point.x >= snake[i].x && point.y <= snake[i].x + SNAKE_WIDTH && point.y >= snake[i].y && point.y <= snake[i].y + SNAKE_WIDTH)
-						break;
-					i++;
-				}
-
-				// Nếu i vượt qua độ dài của rắn thì mồi không thuộc rắn --> thoát vòng lặp
-				if (i >= size) break;
-			}
-
-			// Sau khi tính được toạ độ mới thì bỏ cờ để không vẽ lại thức ăn
-			newpoint = FALSE;
-		}
-
-		// Vẽ thức ăn
-
+		// Vẽ mồi
 		HBRUSH hBrushRed = CreateSolidBrush(RGB(255, 65, 54));
 		SelectObject(hdc, hBrushRed);
 		Rectangle(hdc, point.x, point.y, point.x + SNAKE_WIDTH, point.y + SNAKE_WIDTH);
