@@ -12,7 +12,7 @@
 #define MD_SPEED		50
 #define LG_SPEED		30
 #define SNAKE_WIDTH		10
-#define MAX_SIZE		103
+#define MAX_SIZE		203
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -159,11 +159,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		GetRect(hwnd, &rect);
 
 		// Tạo các nút
-		CreateWindow(L"BUTTON", L"CHẠY / DỪNG", WS_VISIBLE | WS_CHILD, 25, 20, 100, 24, hwnd, (HMENU)PAUSE_BUTTON, GetModuleHandle(NULL), NULL);
-		CreateWindow(L"BUTTON", L"LÀM MỚI", WS_VISIBLE | WS_CHILD, 25, 146, 100, 24, hwnd, (HMENU)REFRESH_BUTTON, GetModuleHandle(NULL), NULL);
-		CreateWindow(L"BUTTON", L"CHẬM", WS_VISIBLE | WS_CHILD, 25, 180, 100, 24, hwnd, (HMENU)LO_SPEED_BUTTON, GetModuleHandle(NULL), NULL);
-		CreateWindow(L"BUTTON", L"VỪA", WS_VISIBLE | WS_CHILD, 25, 210, 100, 24, hwnd, (HMENU)MD_SPEED_BUTTON, GetModuleHandle(NULL), NULL);
-		CreateWindow(L"BUTTON", L"NHANH", WS_VISIBLE | WS_CHILD, 25, 240, 100, 24, hwnd, (HMENU)LG_SPEED_BUTTON, GetModuleHandle(NULL), NULL);
+		CreateWindow(L"BUTTON", L"CHẠY / DỪNG", WS_VISIBLE | WS_CHILD | BS_FLAT, 25, 20, 100, 24, hwnd, (HMENU)PAUSE_BUTTON, GetModuleHandle(NULL), NULL);
+		CreateWindow(L"BUTTON", L"LÀM MỚI", WS_VISIBLE | WS_CHILD | BS_FLAT, 25, 146, 100, 24, hwnd, (HMENU)REFRESH_BUTTON, GetModuleHandle(NULL), NULL);
+		CreateWindow(L"BUTTON", L"CHẬM", WS_VISIBLE | WS_CHILD | BS_FLAT, 25, 180, 100, 24, hwnd, (HMENU)LO_SPEED_BUTTON, GetModuleHandle(NULL), NULL);
+		CreateWindow(L"BUTTON", L"VỪA", WS_VISIBLE | WS_CHILD | BS_FLAT, 25, 210, 100, 24, hwnd, (HMENU)MD_SPEED_BUTTON, GetModuleHandle(NULL), NULL);
+		CreateWindow(L"BUTTON", L"NHANH", WS_VISIBLE | WS_CHILD | BS_FLAT, 25, 240, 100, 24, hwnd, (HMENU)LG_SPEED_BUTTON, GetModuleHandle(NULL), NULL);
 
 		// Khởi tạo con rắn
 		snake[2].x = rect.left + SNAKE_WIDTH;
@@ -249,9 +249,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				playing = FALSE;
 			}
 
-			// SetFocus cho cửa sổ chính để nhận được các thông điệp bàn phím
-			SetFocus(hwnd);
-
 			break;
 
 		case LO_SPEED_BUTTON:
@@ -295,6 +292,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
+
+		// SetFocus cho cửa sổ chính để nhận được các thông điệp bàn phím
+		SetFocus(hwnd);
+
 		return 0;
 
 	case WM_TIMER:
@@ -307,12 +308,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			
 			// Cờ kiểm tra xem rắn "chết" hay chưa
 			BOOL alive = TRUE;
-
-			// Kiểm tra xem rắn đâm vào cạnh không
-			if (snake[0].x >= rect.right || snake[0].x < rect.left || snake[0].y >= rect.bottom || snake[0].y < rect.top)
-			{
-				alive = FALSE;
-			}
 
 			// Kiểm tra xem rắn có đâm vào thân hay không
 			for (int i = 3; i < size; i++)
@@ -358,8 +353,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				// Lấy vùng hiển thị mồi cũ
 				rct.left = point.x;
 				rct.top = point.y;
-				rct.right = point.x + SNAKE_WIDTH;
-				rct.bottom = point.y + SNAKE_WIDTH;
+				rct.right = point.x + SNAKE_WIDTH + 1;
+				rct.bottom = point.y + SNAKE_WIDTH + 1;
 
 				// Vẽ lại vùng của mồi cũ để xoá đi
 				InvalidateRect(hwnd, &rct, TRUE);
@@ -370,27 +365,28 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				// Lấy vùng hiển thị mồi mới
 				rct.left = point.x;
 				rct.top = point.y;
-				rct.right = point.x + SNAKE_WIDTH;
-				rct.bottom = point.y + SNAKE_WIDTH;
+				rct.right = point.x + SNAKE_WIDTH + 1;
+				rct.bottom = point.y + SNAKE_WIDTH + 1;
 
 				// Vẽ lại vùng của mồi mới để hiển thị
 				InvalidateRect(hwnd, &rct, TRUE);
+			}
 
-				// Nếu rắn đạt độ dài tối đa cho phép thì ngừng timer và đưa ra thông báo
-				if (size == MAX_SIZE)
-				{
-					KillTimer(hwnd, ID_TIMER);
-					MessageBox(hwnd, TEXT("Ô kê, diu guyn. Rắn dài quá không cho chơi nữa!"), TEXT("Chúc mừng con nhợn!"), 0);
-					return 0;
-				}
+			// Nếu rắn đạt độ dài tối đa cho phép thì ngừng timer và đưa ra thông báo
+			if (size == MAX_SIZE)
+			{
+				playing = FALSE;
+				KillTimer(hwnd, ID_TIMER);
+				MessageBox(hwnd, TEXT("Rắn đã đạt độ dài tối đa cho phép. Bạn thắng!"), TEXT("Thông báo"), 0);
+				return 0;
 			}
 
 			// Dịch chuyển
 			// Lấy vùng hiển thị đuôi rắn
 			rct.left = snake[size-1].x;
 			rct.top = snake[size - 1].y;
-			rct.right = snake[size - 1].x + SNAKE_WIDTH;
-			rct.bottom = snake[size - 1].y + SNAKE_WIDTH;
+			rct.right = snake[size - 1].x + SNAKE_WIDTH + 1;
+			rct.bottom = snake[size - 1].y + SNAKE_WIDTH + 1;
 
 			// Vẽ lại vùng đuôi rắn để xoá đi
 			InvalidateRect(hwnd, &rct, TRUE);
@@ -430,11 +426,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 
+
+			// Kiểm tra xem rắn đâm vào cạnh không
+			if (snake[0].x >= rect.right)
+			{
+				snake[0].x = rect.left;
+			}
+			if (snake[0].x < rect.left)
+			{
+				snake[0].x = rect.right - SNAKE_WIDTH;
+			}
+			if (snake[0].y >= rect.bottom)
+			{
+				snake[0].y = rect.top;
+			}
+			if (snake[0].y < rect.top)
+			{
+				snake[0].y = rect.bottom - SNAKE_WIDTH;
+			}
+
 			// Lưu lại vùng hiển thị của đầu rắn
 			rct.left = snake[0].x;
 			rct.top = snake[0].y;
-			rct.right = snake[0].x + SNAKE_WIDTH;
-			rct.bottom = snake[0].y + SNAKE_WIDTH;
+			rct.right = snake[0].x + SNAKE_WIDTH + 1;
+			rct.bottom = snake[0].y + SNAKE_WIDTH + 1;
 
 			// Vẽ lại vùng đầu rắn để hiển thị ở vị trí mới
 			InvalidateRect(hwnd, &rct, TRUE);
@@ -448,7 +463,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hdc = BeginPaint(hwnd, &ps);
 
 		// Hiển thị điểm
-		Rectangle(hdc, score_rect.left, score_rect.top, score_rect.right, score_rect.bottom);
+		Rectangle(hdc, score_rect.left, score_rect.top, score_rect.right + 1, score_rect.bottom + 1);
 
 		TextOutW(hdc, 60, 50, TEXT("Điểm"), lstrlen(TEXT("Điểm")));
 
@@ -462,7 +477,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		DeleteObject(hFont);
 
 		// Vẽ khung giới hạn trò chơi
-		Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
+		Rectangle(hdc, rect.left, rect.top, rect.right + 1, rect.bottom + 1);
 
 		// Vẽ rắn
 		HBRUSH hBrushGreen = CreateSolidBrush(RGB(46, 204, 64));
@@ -470,13 +485,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		for (int i = 0; i < size; i++)
 		{
-			Rectangle(hdc, snake[i].x, snake[i].y, snake[i].x + SNAKE_WIDTH, snake[i].y + SNAKE_WIDTH);
+			Rectangle(hdc, snake[i].x, snake[i].y, snake[i].x + SNAKE_WIDTH + 1, snake[i].y + SNAKE_WIDTH + 1);
 		}
 
 		// Vẽ mồi
 		HBRUSH hBrushRed = CreateSolidBrush(RGB(255, 65, 54));
 		SelectObject(hdc, hBrushRed);
-		Rectangle(hdc, point.x, point.y, point.x + SNAKE_WIDTH, point.y + SNAKE_WIDTH);
+		Rectangle(hdc, point.x, point.y, point.x + SNAKE_WIDTH + 1, point.y + SNAKE_WIDTH + 1);
 
 		DeleteObject(hBrushRed);
 		DeleteObject(hBrushGreen);

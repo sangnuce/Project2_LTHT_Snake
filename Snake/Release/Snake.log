@@ -1,0 +1,12 @@
+﻿  Source.c
+Source.c(90): warning C4244: 'function': conversion from 'time_t' to 'unsigned int', possible loss of data
+Source.c(96): warning C4020: 'random': too many actual parameters
+Source.c(97): warning C4020: 'random': too many actual parameters
+Source.c(410): warning C4047: '=': 'int' differs in levels of indirection from 'int *'
+  Generating code
+  0 of 6 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Snake.vcxproj -> E:\Documents\Visual Studio 2015\Projects\LTHT\Snake\Release\Snake.exe
+  Snake.vcxproj -> E:\Documents\Visual Studio 2015\Projects\LTHT\Snake\Release\Snake.pdb (Full PDB)
